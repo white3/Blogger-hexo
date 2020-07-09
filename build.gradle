@@ -1,0 +1,15 @@
+plugins {
+    id 'java'
+}
+
+group 'org.menzel3'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile group: 'commons-io', name: 'commons-io', version: '2.7'
+}

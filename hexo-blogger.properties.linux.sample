@@ -1,0 +1,17 @@
+# markdown 文件的编码
+MARKDOWN_CHARSET=UTF-8
+
+# 写 markdown 的文件夹夹
+SOURCE_POST_PATH=/home/mz3/Desktop/CSAPP
+
+# hexo 博客目录下的 source 目录
+BLOG_PATH=/media/mz3/Develop/github.com/menzel3.fun/source
+
+# 在 BLOG_PATH 目录下, 用于存放图片的文件夹
+BLOG_IMAGE_ABSTRACT_ROOT=/images
+
+# 在 BLOG_PATH 目录下, 用于存放 markdown 的文件夹, 也是 hexo 下的markdown存放处
+BLOG_POST_ABSTRACT_ROOT=/_posts
+
+# 打印移动的 markdown 文件
+PRINT_FILE=true
