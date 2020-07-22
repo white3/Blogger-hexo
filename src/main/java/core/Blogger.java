@@ -11,9 +11,11 @@ import static core.StringUtils.correctPath;
 public class Blogger extends Thread {
     private Pattern sourceRootPattern;
     private File sourceAbsolutePostPath;
+    private final String name;
 
     public Blogger(String sourceAbsolutePostPath) {
-        sourceRootPattern = Pattern.compile(StringUtils.escapeSpecialRegexChars(correctPath(sourceAbsolutePostPath)) + "(.*)");
+        sourceRootPattern = Pattern.compile(StringUtils.escapeSpecialRegexChars(sourceAbsolutePostPath) + "(.*)");
+        this.name = Constant.FILE_SEPARATE + StringUtils.getNameWithSuffix(sourceAbsolutePostPath);
         this.sourceAbsolutePostPath = new File(sourceAbsolutePostPath);
     }
 
@@ -31,7 +33,7 @@ public class Blogger extends Thread {
                     // File -> Markdown
                     .map(Markdown::new)
                     // 开始执行博客下 markdown 生成
-                    .peek(markdown -> BloggerUtils.move(markdown, sourceRootPattern))
+                    .map(markdown -> BloggerUtils.move(markdown, sourceRootPattern, name))
                     // 过滤掉未上传的文件, 再输出
                     .filter(Markdown::isDoPublish)
                     // 输出日志

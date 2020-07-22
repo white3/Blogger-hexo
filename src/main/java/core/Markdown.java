@@ -98,4 +98,8 @@ public class Markdown {
     public void setHasImage(boolean hasImage) {
         this.hasImage = hasImage;
     }
+
+    public String getDirectory() {
+        return this.file.getAbsoluteFile().getParent();
+    }
 }

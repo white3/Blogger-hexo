@@ -16,85 +16,86 @@ import static core.StringUtils.correctPath;
 import static core.StringUtils.escapeSpecialRegexChars;
 
 public class BloggerUtils {
-    private static final Pattern markdownHeadPattern = Pattern.compile("---([\\s\\S]*?)---", Pattern.MULTILINE);
-    private static final Pattern publishPattern = Pattern.compile("^publish: (true|false)", Pattern.MULTILINE);
-    private static final Pattern imagePattern = Pattern.compile("((\\!\\[.*?\\])\\(.*?)\\.assets(.*)\\)", Pattern.MULTILINE);
 
     /**
-     *
      * 移动存在markdown文件的项目目录、笔记目录等
-     * @param markdown markdown文件
+     *
+     * @param markdown          markdown文件
      * @param sourceRootPattern 转化的根目录的绝对路径, 形如 /home/mz3/CSAPP
      */
-    static void move(Markdown markdown, Pattern sourceRootPattern) {
+    static Markdown move(Markdown markdown, Pattern sourceRootPattern, String objectName) {
         // Is it publishing?
-        Matcher mdHeadMatcher = markdownHeadPattern.matcher(markdown.getContent());
-        if (mdHeadMatcher.find()) {
-            Matcher matcher = publishPattern.matcher(mdHeadMatcher.group(1));
-            if (matcher.find()) {
-                markdown.setDoPublish(matcher.group(1).equals("true"));
-            }
-        }
-        if (!markdown.isDoPublish())
-            return;
+        markdown.setDoPublish(StringUtils.isPublish(markdown.getContent()));
 
+        if (!markdown.isDoPublish()) {
+            return markdown;
+        }
+
+        /**
+         * 获取相对路径, 例如
+         * "/home/mz3/Desktop/CSAPP/first/1" -> "first/1" = relativePath
+         */
         Matcher tempMatcher = sourceRootPattern.matcher(markdown.getFilePathWithoutExtension());
         if (!tempMatcher.find()) {
             handleError("can't move " + markdown.getFilePathWithoutExtension());
-            return;
+            return markdown;
         }
-        String relativePath = tempMatcher.group(1);
+        String relativePath = objectName + tempMatcher.group(1);
+        System.out.println(relativePath);
 
         // move images' directory
         List<String> images = null;
         if (!(images = replaceImagePath(markdown, relativePath)).isEmpty()) {
-//            try {
-                Stream<String> imageStream = images.parallelStream();
-                imageStream.forEach((String image) -> {
-                    try {
-                        System.out.println(image);
-                        FileUtils.copyFileToDirectory(
-                                new File(markdown.getFilePathWithoutExtension() + ".assets" + image),
-                                new File(Constant.BLOG_ABSOLUTE_PATH + Constant.BLOG_IMAGE_RELATIVE_ROOT
-                                + relativePath + ".assets/"));
-                    } catch (Exception e) {
-                        handleError(e);
-                    }
-                });
-//                FileUtils.copyDirectory(new File(markdown.getFilePathWithoutExtension() + ".assets/"),
-//                        new File(Constant.BLOG_ABSOLUTE_PATH + Constant.BLOG_IMAGE_RELATIVE_ROOT
-//                                + relativePath + ".assets/"));
-//            } catch (IOException e) {
-//                handleError(e);
-//            }
+            images.forEach((String image) -> {
+                try {
+                    // System.out.println(image);
+                    FileUtils.copyFileToDirectory(
+                            new File(markdown.getDirectory() + image),
+                            new File(Constant.BLOG_ABSOLUTE_PATH + Constant.BLOG_IMAGE_RELATIVE_ROOT
+                                    + relativePath + Constant.IMAGES_DIRECTORY_SUFFIX));
+                } catch (Exception e) {
+                    handleError(e);
+                }
+            });
         }
 
         markdown.setFile(new File(Constant.BLOG_ABSOLUTE_POST_ROOT + relativePath + Markdown.ends));
 
         // move markdown
         markdown.doWrite();
+
+        return markdown;
     }
 
     /**
-     *
+     * 匹配图片路径, 截断扣除
+     * "123432![WindowsTerminal](0002.terminal改造.assets/image-20200721161709980.png)324234" ->
+     * {"![WindowsTerminal](0002.terminal改造", "![WindowsTerminal]", "0002.terminal改造", "/image-20200721161709980.png"}
+     */
+    static final Pattern imagePattern = Pattern.compile("((\\!\\[.*?\\])\\((.*?))\\.assets(.*)\\)", Pattern.MULTILINE);
+
+    /**
      * @param markdown     markdown文件
      * @param relativePath 相对于项目目录的相对路径
-     * @return 图片名称的列表, 形如: /01.png
+     * @return 图片名称的列表, 形如: learn/01.png
      */
     private static List<String> replaceImagePath(Markdown markdown, String relativePath) {
         String result = markdown.getContent();
-        Matcher matcher = imagePattern.matcher(result);
         boolean flag = false;
         LinkedList<String> images = new LinkedList<>();
 
+        Matcher matcher = imagePattern.matcher(result);
         while (matcher.find()) {
             result = result.replace(matcher.group(1),
-                    correctPath(matcher.group(2) + "(" + Constant.BLOG_IMAGE_RELATIVE_ROOT + relativePath));
-            images.add(correctPath(matcher.group(3)));
+                    matcher.group(2) + "(" + Constant.BLOG_IMAGE_RELATIVE_ROOT + relativePath);
+            images.add(correctPath(Constant.FILE_SEPARATE + matcher.group(3) + Constant.IMAGES_DIRECTORY_SUFFIX + matcher.group(4)));
             flag = true;
         }
-        if (flag)
+
+        if (flag) {
             markdown.setContent(result);
+            markdown.setHasImage(true);
+        }
         return images;
     }
 }
