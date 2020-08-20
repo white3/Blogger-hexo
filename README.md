@@ -54,7 +54,7 @@ PRINT_FILE=true
 ```sh
 # local_test.sh
 java -jar hexo-blogger.jar
-hexo clean && hexo g -d
+hexo clean && hexo s -g
 
 
 # update.sh
